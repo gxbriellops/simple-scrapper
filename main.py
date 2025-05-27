@@ -80,6 +80,9 @@ print("🔥 Links encontrados:")
 print("=" * 40)
 
 sublinks = set()
+
+sublinks.add(url)
+
 for link in links:
     href = link.get('href')
     if not href or href.startswith('#'):
