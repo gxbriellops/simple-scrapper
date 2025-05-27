@@ -1,13 +1,13 @@
+from docling.document_converter import DocumentConverter
 import requests
 from bs4 import BeautifulSoup
-from docling.document_converter import DocumentConverter
 import re
 import os
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urljoin
 from collections import defaultdict
 
-url = 'https://docs.streamlit.io/'
-output_dir = 'streamlit_docs'
+url = 'https://python.langchain.com/docs/introduction/'
+output_dir = 'langChain_docs'
 
 # Criar o diretório se não existir
 os.makedirs(output_dir, exist_ok=True)
@@ -20,30 +20,22 @@ links = soup.find_all('a')
 print("🔥 Links com exemplos de código:")
 print("=" * 40)
 
-sublinks = []
+sublinks = set()
 for link in links:
     href = link.get('href')
-    
-    if href and href.startswith('./'):
-        full_url = f'{url}{href[2:]}'
-    elif href and href.startswith('/'):
-        full_url = f'https://docs.streamlit.io{href}'
-    elif href and href.startswith('http'):
-        full_url = href
-    else:
-        continue
-    
-    if full_url not in sublinks:
-        sublinks.append(full_url)
-        print(full_url)
-
+    if not href or href.startswith('#'):
+        continue  # Ignora âncoras e hrefs vazios
+    full_url = urljoin(url, href)
+    sublinks.add(full_url)
 sources = sublinks
 
 print(f"\n✅ Total: {len(sources)} links!")
 print(f"📁 Arquivos serão salvos em: {output_dir}/")
 
-converter = DocumentConverter()
+converter = DocumentConverter() # Convrter documentos HTML para MARKDOWN
 filename_counter = defaultdict(int)  # Contador para nomes duplicados
+
+arquivos_processados = 0
 
 for source in sources:
     try:
@@ -95,8 +87,10 @@ for source in sources:
         
         print(f'✅ Arquivo salvo: "{filepath}"')
         print(f'   📍 Fonte: {source}')
+        arquivos_processados = arquivos_processados + 1
         
     except Exception as e:
         print(f'❌ Erro ao processar "{source}": {e}')
 
 print(f"\n🎉 Processamento concluído! Arquivos salvos em: {output_dir}/")
+print(f'Foram processados {arquivos_processados} arquivos!')
