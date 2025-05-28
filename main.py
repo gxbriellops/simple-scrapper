@@ -6,8 +6,12 @@ import os
 from urllib.parse import urlparse, urljoin
 from collections import defaultdict
 
-url = 'https://docling-project.github.io/docling/'
-output_dir = 'docling_docs'
+url = 'https://pandas.pydata.org/docs/reference/index.html'
+match = re.search(r'//([^/]+)\.(com|org|io|net|edu|gov|br|dev|ai)', url)
+if match:
+    output_dir = match.group(1)
+else:
+    output_dir = 'saida_padrao'
 
 # Configurações de tamanho
 MAX_FILE_SIZE_CHARS = 100000  # ~50k caracteres por arquivo
@@ -80,6 +84,9 @@ print("🔥 Links encontrados:")
 print("=" * 40)
 
 sublinks = set()
+
+sublinks.add(url)
+
 for link in links:
     href = link.get('href')
     if not href or href.startswith('#'):
@@ -194,9 +201,6 @@ if current_batch_content:
         batch_filepath, 
         current_batch_sources
     )
-    
-    print(f"\n💾 Último batch salvo: {batch_size['chars']:,} chars / {batch_size['mb']:.2f}MB")
-    print(f"   📁 {os.path.basename(batch_filepath)} ({len(current_batch_sources)} fontes)")
 
 # Relatório final
 print(f"\n🎉 PROCESSAMENTO CONCLUÍDO!")
