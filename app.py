@@ -1,75 +1,63 @@
 import os
 from dotenv import load_dotenv
-from typing import Iterator
-from langchain_core.document_loaders import BaseLoader
 from langchain_core.documents import Document as LCDocument
-from docling.document_converter import DocumentConverter
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
-from langchain_google_genai import GoogleGenerativeAI
+from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import RunnablePassthrough
 from typing import Iterable
-import glob
-from langchain_community.vectorstores import FAISS
+from langchain_community.vectorstores import Chroma
+from langchain_community.document_loaders import DirectoryLoader, TextLoader
+from langchain_openai import ChatOpenAI
 
-
+# Carregar variáveis de ambiente
 load_dotenv()
 
-gemini_api = os.getenv('GEMINI_API')
-
-class DoclingPDFLoader(BaseLoader):
-
-    def __init__(self, file_path: str | list[str]) -> None:
-        self._file_paths = file_path if isinstance(file_path, list) else [file_path]
-        self._converter = DocumentConverter()
-
-    def lazy_load(self) -> Iterator[LCDocument]:
-        for source in self._file_paths:
-            dl_doc = self._converter.convert(source).document
-            text = dl_doc.export_to_markdown()
-            yield LCDocument(page_content=text)
+deepseek_api = os.getenv('DEEPSEEK_API')
 
 # Caminho do diretório com os arquivos
-file_dir = r"C:\Users\Gabriel Lopes\Documents\PROJETOS_PROGRAMAÇÃO_2\create-markdown\langChain_docs"
+file_dir = r"C:\Users\Gabriel Lopes\Documents\PROJETOS_PROGRAMAÇÃO_2\create-markdown\docs.streamlit.io"
 
-# Lista todos os arquivos .md (ou troque para o tipo desejado)
-file_list = glob.glob(os.path.join(file_dir, "*.md"))
+loader = DirectoryLoader(
+    path=file_dir,
+    glob="*.md",
+    loader_cls=TextLoader,
+    loader_kwargs={'encoding': 'utf-8'}  # Importante para caracteres especiais
+)
 
-loader = DoclingPDFLoader(file_path=file_list)
-
+# Configurar o text splitter
 text_splitter = RecursiveCharacterTextSplitter(
     chunk_size=500,
     chunk_overlap=100,
 )
 
+# Carregar e dividir documentos
 docs = loader.load()
-
 splits = text_splitter.split_documents(docs)
 
-embeddings = GoogleGenerativeAIEmbeddings(
-    model="models/embedding-001",
-    google_api_key=gemini_api
-)
+# Configurar embeddings
+embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 
-vectorstore = FAISS.from_documents(
+# Criar vectorstore
+vectorstore = Chroma.from_documents(
     splits,
     embeddings
 )
 
-llm = GoogleGenerativeAI(
-    model = 'gemini-2.0-flash',
-    google_api_key = gemini_api,
-    temperature = 0.5
+llm = ChatOpenAI(
+    model='deepseek/deepseek-chat-v3-0324:free',
+    temperature=0.5,
+    base_url='https://openrouter.ai/api/v1'
 )
 
 def format_docs(docs: Iterable[LCDocument]):
     return "\n\n".join(doc.page_content for doc in docs)
 
-
+# Configurar retriever
 retriever = vectorstore.as_retriever()
 
+# Template do prompt
 prompt = PromptTemplate.from_template(
     """Você é um assistente especializado em programação. 
 Responda dúvidas sobre bibliotecas, explique conceitos de forma clara e forneça exemplos de código práticos e comentados sempre que possível.
@@ -84,6 +72,7 @@ Responda de forma objetiva, didática e, se aplicável, inclua exemplos de códi
 """
 )
 
+# Criar a chain RAG
 rag_chain = (
     {"context": retriever | format_docs, "question": RunnablePassthrough()}
     | prompt
@@ -91,6 +80,7 @@ rag_chain = (
     | StrOutputParser()
 )
 
+# CORREÇÃO 3: Capturar e exibir o resultado
 question = input('Sua pergunta: ')
-
-rag_chain.invoke(input=question)
+result = rag_chain.invoke(question)  # Passar diretamente a string
+print(result)

@@ -1,212 +1,145 @@
-from docling.document_converter import DocumentConverter
+#!/usr/bin/env python3
+"""Web Scraper Simplificado - Extrai conteúdo de websites e converte para Markdown"""
+
+import os
+import re
+from urllib.parse import urlparse, urljoin
+from datetime import datetime
 import requests
 from bs4 import BeautifulSoup
-import re
-import os
-from urllib.parse import urlparse, urljoin
-from collections import defaultdict
+from docling.document_converter import DocumentConverter
 
-url = 'https://pandas.pydata.org/docs/reference/index.html'
-match = re.search(r'//([^/]+)\.(com|org|io|net|edu|gov|br|dev|ai)', url)
-if match:
-    output_dir = match.group(1)
-else:
-    output_dir = 'saida_padrao'
 
-# Configurações de tamanho
-MAX_FILE_SIZE_CHARS = 100000  # ~50k caracteres por arquivo
-MAX_FILE_SIZE_MB = 2  # 1MB máximo por arquivo
-MIN_FILE_SIZE_CHARS = 5000   # Tamanho mínimo antes de concatenar
-
-# Criar o diretório se não existir
-os.makedirs(output_dir, exist_ok=True)
-
-def get_text_size_info(text):
-    """Retorna informações sobre o tamanho do texto"""
-    char_count = len(text)
-    byte_count = len(text.encode('utf-8'))
-    mb_size = byte_count / (1024 * 1024)
-    
-    return {
-        'chars': char_count,
-        'bytes': byte_count,
-        'mb': mb_size
-    }
-
-def should_concatenate(current_content, new_content):
-    """Decide se deve concatenar baseado no tamanho"""
-    current_size = get_text_size_info(current_content)
-    new_size = get_text_size_info(new_content)
-    combined_size = get_text_size_info(current_content + new_content)
-    
-    # Se o arquivo atual é muito pequeno, sempre concatena
-    if current_size['chars'] < MIN_FILE_SIZE_CHARS:
-        return True
-    
-    # Se concatenar exceder o limite, não concatena
-    if (combined_size['chars'] > MAX_FILE_SIZE_CHARS or 
-        combined_size['mb'] > MAX_FILE_SIZE_MB):
-        return False
-    
-    # Se o novo conteúdo é pequeno, concatena
-    if new_size['chars'] < MIN_FILE_SIZE_CHARS:
-        return True
-    
-    return False
-
-def save_concatenated_file(content, filepath, source_urls):
-    """Salva arquivo concatenado com metadados"""
-    header = f"""# Documento Concatenado
-Gerado automaticamente em: {__import__('datetime').datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-Total de fontes: {len(source_urls)}
-
-## Fontes:
-"""
-    for i, source in enumerate(source_urls, 1):
-        header += f"{i}. {source}\n"
-    
-    header += "\n" + "="*80 + "\n\n"
-    
-    full_content = header + content
-    
-    with open(filepath, 'w', encoding='utf-8') as f:
-        f.write(full_content)
-    
-    size_info = get_text_size_info(full_content)
-    return size_info
-
-# Scraping inicial
-response = requests.get(url=url)
-soup = BeautifulSoup(response.text, 'html.parser')
-links = soup.find_all('a')
-
-print("🔥 Links encontrados:")
-print("=" * 40)
-
-sublinks = set()
-
-sublinks.add(url)
-
-for link in links:
-    href = link.get('href')
-    if not href or href.startswith('#'):
-        continue
-    full_url = urljoin(url, href)
-    sublinks.add(full_url)
-
-sources = list(sublinks)
-print(f"\n✅ Total: {len(sources)} links!")
-print(f"📁 Arquivos serão salvos em: {output_dir}/")
-
-# Inicialização para concatenação
-converter = DocumentConverter()
-filename_counter = defaultdict(int)
-arquivos_processados = 0
-
-# Variáveis para concatenação
-current_batch_content = ""
-current_batch_sources = []
-batch_number = 1
-individual_files = []  # Para arquivos grandes que ficam separados
-
-for i, source in enumerate(sources, 1):
-    try:
-        print(f"\n[{i}/{len(sources)}] Processando: {source}")
+class SimpleWebScraper:
+    def __init__(self, url, max_files=10):
+        self.url = url
+        self.max_files = max_files
+        self.converter = DocumentConverter()
         
-        doc = converter.convert(source=source)
-        md_content = doc.document.export_to_markdown()
+        domain = urlparse(url).netloc.replace('www.', '')
+        self.output_dir = re.sub(r'[^\w\-_.]', '_', domain) or 'output'
+        os.makedirs(self.output_dir, exist_ok=True)
         
-        if not md_content.strip():
-            print("   ⚠️  Conteúdo vazio, pulando...")
-            continue
-        
-        size_info = get_text_size_info(md_content)
-        
-        # Adicionar separador e fonte ao conteúdo
-        content_with_header = f"\n\n{'='*60}\n"
-        content_with_header += f"# FONTE: {source}\n"
-        content_with_header += f"{'='*60}\n\n"
-        content_with_header += md_content
-        
-        # Decidir se concatena ou salva individualmente
-        if size_info['chars'] > MAX_FILE_SIZE_CHARS or size_info['mb'] > MAX_FILE_SIZE_MB:
-            # Arquivo muito grande - salvar individualmente
-            parsed_url = urlparse(source)
-            url_parts = parsed_url.path.strip('/').split('/')
+    def get_links(self):
+        """Obtém todos os links da mesma domain"""
+        try:
+            soup = BeautifulSoup(requests.get(self.url, timeout=30).text, 'html.parser')
+            base_domain = urlparse(self.url).netloc
             
-            if len(url_parts) >= 2:
-                base_name = '_'.join(url_parts[-2:])
-            elif len(url_parts) == 1:
-                base_name = url_parts[0]
-            else:
-                base_name = "documento_grande"
-            
-            base_name = re.sub(r'[\\/*?:"<>|#]', "_", base_name)[:100]
-            filename = f"INDIVIDUAL_{base_name}.md"
-            filepath = os.path.join(output_dir, filename)
-            
-            # Evitar sobrescrita
-            counter = 1
-            while os.path.exists(filepath):
-                name_part = filename.replace('.md', '')
-                filepath = os.path.join(output_dir, f"{name_part}_v{counter:02d}.md")
-                counter += 1
+            links = {self.url}
+            links.update(urljoin(self.url, a['href']) 
+                        for a in soup.find_all('a', href=True)
+                        if urlparse(urljoin(self.url, a['href'])).netloc == base_domain)
+            return list(links)
+        except Exception as e:
+            print(f"❌ Erro ao obter links: {e}")
+            return [self.url]
+    
+    def process_url(self, url):
+        """Processa uma URL e retorna o conteúdo em Markdown"""
+        try:
+            print(f"📄 Processando: {url}")
+            content = self.converter.convert(source=url).document.export_to_markdown()
+            return (url, content) if content.strip() else None
+        except Exception as e:
+            print(f"   ⚠️  Erro: {e}")
+            return None
+    
+    def run(self):
+        """Executa o scraping e salva os resultados"""
+        print(f"🚀 Iniciando scraping de: {self.url}\n📁 Salvando em: {self.output_dir}/\n")
+        
+        links = self.get_links()
+        print(f"🔗 {len(links)} links encontrados\n")
+        
+        # Processar links e coletar conteúdo
+        all_content = [result for link in links if (result := self.process_url(link))]
+        
+        if not all_content:
+            print("\n❌ Nenhum conteúdo foi extraído")
+            return
+        
+        # Salvar e concatenar conteúdo
+        self._save_concatenated(all_content)
+        print(f"\n✨ Concluído! {len(all_content)} páginas processadas")
+    
+    def _save_concatenated(self, content_list):
+        """Salva o conteúdo em arquivos concatenados"""
+        concat_files = max(1, (len(content_list) + 9) // 10)  # Máximo 10 arquivos finais
+        groups = [content_list[i:i + concat_files] for i in range(0, len(content_list), concat_files)]
+        
+        concatenated_info = {}
+        for idx, group in enumerate(groups, 1):
+            filename = f"concat_{idx:02d}.md"
+            filepath = os.path.join(self.output_dir, filename)
             
             with open(filepath, 'w', encoding='utf-8') as f:
-                f.write(f"# Documento Individual (Arquivo Grande)\n")
-                f.write(f"Fonte: {source}\n")
-                f.write(f"Tamanho: {size_info['chars']:,} caracteres\n\n")
-                f.write(md_content)
-            
-            individual_files.append(filepath)
-            print(f"   💾 Salvo individualmente: {os.path.basename(filepath)}")
-            
-        elif should_concatenate(current_batch_content, content_with_header):
-            # Adicionar ao batch atual
-            current_batch_content += content_with_header
-            current_batch_sources.append(source)
-            print(f"   📦 Adicionado ao batch {batch_number}")
-            
-        else:
-            # Salvar batch atual e iniciar novo
-            if current_batch_content:
-                batch_filename = f"BATCH_{batch_number:03d}_concatenado.md"
-                batch_filepath = os.path.join(output_dir, batch_filename)
+                # Cabeçalho
+                f.write(f"# Arquivo Concatenado {idx}\n")
+                f.write(f"# Data: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+                f.write(f"# Contém {len(group)} páginas:\n")
                 
-                batch_size = save_concatenated_file(
-                    current_batch_content, 
-                    batch_filepath, 
-                    current_batch_sources
-                )
+                urls = []
+                for url, _ in group:
+                    f.write(f"# - {self._url_to_filename(url)} ({url})\n")
+                    urls.append(url)
                 
-                batch_number += 1
+                f.write("\n" + "="*100 + "\n\n")
+                
+                # Conteúdo
+                for i, (url, content) in enumerate(group, 1):
+                    if i > 1:
+                        f.write("\n\n" + "-"*80 + "\n\n")
+                    f.write(f"## PÁGINA {i}: {self._url_to_filename(url)}\n\n")
+                    f.write(f"# Fonte: {url}\n")
+                    f.write(f"# Data: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
+                    f.write('='*80 + '\n\n')
+                    f.write(content)
             
-            # Iniciar novo batch
-            current_batch_content = content_with_header
-            current_batch_sources = [source]
-            print(f"   📦 Iniciado novo batch {batch_number}")
+            concatenated_info[filename] = urls
+            print(f"   💾 Salvo: {filename}")
         
-        arquivos_processados += 1
-        
-    except Exception as e:
-        print(f'   ❌ Erro ao processar: {e}')
-
-# Salvar último batch se houver conteúdo
-if current_batch_content:
-    batch_filename = f"BATCH_{batch_number:03d}_concatenado.md"
-    batch_filepath = os.path.join(output_dir, batch_filename)
+        # Criar índice
+        self._create_index(concatenated_info)
     
-    batch_size = save_concatenated_file(
-        current_batch_content, 
-        batch_filepath, 
-        current_batch_sources
-    )
+    def _url_to_filename(self, url):
+        """Converte URL em nome de arquivo válido"""
+        parsed = urlparse(url)
+        
+        if parsed.path and parsed.path != '/':
+            path = parsed.path.strip('/')
+            path = re.sub(r'\.(html?|php|asp|jsp)$', '', path)
+            path = re.sub(r'[_\-\.]', ' ', path)
+            filename = os.path.basename(path.strip())
+            if filename:
+                return f"{filename}.md"
+        
+        return f"{parsed.netloc}.md"
+    
+    def _create_index(self, concatenated_info):
+        """Cria um índice final com os arquivos concatenados"""
+        with open(os.path.join(self.output_dir, 'index.md'), 'w', encoding='utf-8') as f:
+            f.write(f"# Índice Final - {urlparse(self.url).netloc}\n\n")
+            f.write(f"**Data:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+            f.write(f"**URL Original:** {self.url}\n")
+            f.write(f"**Total de arquivos:** {len(concatenated_info)}\n\n")
+            f.write("## Arquivos Concatenados:\n\n")
+            
+            for filename, urls in concatenated_info.items():
+                f.write(f"### 📄 {filename}\n")
+                f.write(f"**Páginas incluídas:** {len(urls)}\n\n")
+                for i, url in enumerate(urls, 1):
+                    f.write(f"{i}. {url}\n")
+                f.write("\n")
+        
+        print(f"   📑 Índice criado: index.md")
 
-# Relatório final
-print(f"\n🎉 PROCESSAMENTO CONCLUÍDO!")
-print(f"📊 Estatísticas:")
-print(f"   • {arquivos_processados} páginas processadas")
-print(f"   • {batch_number} arquivos concatenados")
-print(f"   • {len(individual_files)} arquivos individuais (grandes)")
-print(f"   • Total de arquivos: {batch_number + len(individual_files)}")
-print(f"\n📁 Arquivos salvos em: {output_dir}/")
+
+def main():
+    url = 'https://docs.streamlit.io/develop/api-reference'
+    scraper = SimpleWebScraper(url)
+    scraper.run()
+
+
+if __name__ == "__main__":
+    main()
