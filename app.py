@@ -9,7 +9,7 @@ from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import RunnablePassthrough
 from typing import Iterable
 import glob
-from langchain_community.vectorstores import Chroma
+from langchain.vectorstores import FAISS
 from langchain_community.document_loaders import DirectoryLoader, UnstructuredMarkdownLoader
 
 load_dotenv()
@@ -26,23 +26,17 @@ loader = DirectoryLoader(path=file_dir,
                          glob="*.md",
                          loader_cls=UnstructuredMarkdownLoader)
 
-text_splitter = RecursiveCharacterTextSplitter(
-    chunk_size=500,
-    chunk_overlap=100,
-)
-
 docs = loader.load()
-
-splits = text_splitter.split_documents(docs)
 
 embeddings = GoogleGenerativeAIEmbeddings(
     model="models/embedding-001",
     google_api_key=gemini_api
 )
 
-vectorstore = Chroma.from_documents(
-    splits,
-    embeddings
+vectorstore = FAISS.from_documents(
+    docs,
+    embeddings,
+    
 )
 
 llm = GoogleGenerativeAI(
