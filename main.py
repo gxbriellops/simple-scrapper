@@ -11,9 +11,8 @@ from docling.document_converter import DocumentConverter
 
 
 class SimpleWebScraper:
-    def __init__(self, url, max_files=10):
+    def __init__(self, url):
         self.url = url
-        self.max_files = max_files
         self.converter = DocumentConverter()
         
         domain = urlparse(url).netloc.replace('www.', '')
@@ -36,11 +35,35 @@ class SimpleWebScraper:
             return [self.url]
     
     def process_url(self, url):
-        """Processa uma URL e retorna o conteúdo em Markdown"""
+        """Processa uma URL e salva em arquivo individual"""
         try:
             print(f"📄 Processando: {url}")
             content = self.converter.convert(source=url).document.export_to_markdown()
-            return (url, content) if content.strip() else None
+            
+            if not content.strip():
+                return None
+                
+            filename = self._url_to_filename(url)
+            filepath = os.path.join(self.output_dir, filename)
+            
+            # Evitar sobrescrever arquivos com mesmo nome
+            counter = 1
+            original_filepath = filepath
+            while os.path.exists(filepath):
+                name, ext = os.path.splitext(original_filepath)
+                filepath = f"{name}_{counter:02d}{ext}"
+                counter += 1
+            
+            with open(filepath, 'w', encoding='utf-8') as f:
+                f.write(f"# {self._get_page_title(url)}\n\n")
+                f.write(f"**Fonte:** {url}\n")
+                f.write(f"**Data:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
+                f.write('='*80 + '\n\n')
+                f.write(content)
+            
+            print(f"   💾 Salvo: {os.path.basename(filepath)}")
+            return (url, os.path.basename(filepath))
+            
         except Exception as e:
             print(f"   ⚠️  Erro: {e}")
             return None
@@ -52,85 +75,52 @@ class SimpleWebScraper:
         links = self.get_links()
         print(f"🔗 {len(links)} links encontrados\n")
         
-        # Processar links e coletar conteúdo
-        all_content = [result for link in links if (result := self.process_url(link))]
+        # Processar links
+        processed = [result for link in links if (result := self.process_url(link))]
         
-        if not all_content:
+        if not processed:
             print("\n❌ Nenhum conteúdo foi extraído")
             return
         
-        # Salvar e concatenar conteúdo
-        self._save_concatenated(all_content)
-        print(f"\n✨ Concluído! {len(all_content)} páginas processadas")
-    
-    def _save_concatenated(self, content_list):
-        """Salva o conteúdo em arquivos concatenados"""
-        concat_files = max(1, (len(content_list) + 9) // 10)  # Máximo 10 arquivos finais
-        groups = [content_list[i:i + concat_files] for i in range(0, len(content_list), concat_files)]
-        
-        concatenated_info = {}
-        for idx, group in enumerate(groups, 1):
-            filename = f"concat_{idx:02d}.md"
-            filepath = os.path.join(self.output_dir, filename)
-            
-            with open(filepath, 'w', encoding='utf-8') as f:
-                # Cabeçalho
-                f.write(f"# Arquivo Concatenado {idx}\n")
-                f.write(f"# Data: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-                f.write(f"# Contém {len(group)} páginas:\n")
-                
-                urls = []
-                for url, _ in group:
-                    f.write(f"# - {self._url_to_filename(url)} ({url})\n")
-                    urls.append(url)
-                
-                f.write("\n" + "="*100 + "\n\n")
-                
-                # Conteúdo
-                for i, (url, content) in enumerate(group, 1):
-                    if i > 1:
-                        f.write("\n\n" + "-"*80 + "\n\n")
-                    f.write(f"## PÁGINA {i}: {self._url_to_filename(url)}\n\n")
-                    f.write(f"# Fonte: {url}\n")
-                    f.write(f"# Data: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
-                    f.write('='*80 + '\n\n')
-                    f.write(content)
-            
-            concatenated_info[filename] = urls
-            print(f"   💾 Salvo: {filename}")
-        
         # Criar índice
-        self._create_index(concatenated_info)
+        self._create_index(processed)
+        print(f"\n✨ Concluído! {len(processed)} páginas processadas")
     
     def _url_to_filename(self, url):
         """Converte URL em nome de arquivo válido"""
         parsed = urlparse(url)
         
+        # Usar path da URL se disponível
         if parsed.path and parsed.path != '/':
-            path = parsed.path.strip('/')
+            path = parsed.path.strip('/').replace('/', '_')
             path = re.sub(r'\.(html?|php|asp|jsp)$', '', path)
-            path = re.sub(r'[_\-\.]', ' ', path)
-            filename = os.path.basename(path.strip())
+            filename = re.sub(r'[^\w\-_.]', '_', path)
             if filename:
                 return f"{filename}.md"
         
-        return f"{parsed.netloc}.md"
+        # Fallback para domain
+        return f"{parsed.netloc.replace('.', '_')}.md"
     
-    def _create_index(self, concatenated_info):
-        """Cria um índice final com os arquivos concatenados"""
+    def _get_page_title(self, url):
+        """Extrai título da página para usar como cabeçalho"""
+        parsed = urlparse(url)
+        if parsed.path and parsed.path != '/':
+            title = parsed.path.strip('/').split('/')[-1]
+            title = re.sub(r'\.(html?|php|asp|jsp)$', '', title)
+            return title.replace('-', ' ').replace('_', ' ').title()
+        return parsed.netloc
+    
+    def _create_index(self, processed_files):
+        """Cria um índice com todos os arquivos processados"""
         with open(os.path.join(self.output_dir, 'index.md'), 'w', encoding='utf-8') as f:
-            f.write(f"# Índice Final - {urlparse(self.url).netloc}\n\n")
+            f.write(f"# Índice - {urlparse(self.url).netloc}\n\n")
             f.write(f"**Data:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
             f.write(f"**URL Original:** {self.url}\n")
-            f.write(f"**Total de arquivos:** {len(concatenated_info)}\n\n")
-            f.write("## Arquivos Concatenados:\n\n")
+            f.write(f"**Total de páginas:** {len(processed_files)}\n\n")
+            f.write("## Arquivos Gerados:\n\n")
             
-            for filename, urls in concatenated_info.items():
-                f.write(f"### 📄 {filename}\n")
-                f.write(f"**Páginas incluídas:** {len(urls)}\n\n")
-                for i, url in enumerate(urls, 1):
-                    f.write(f"{i}. {url}\n")
-                f.write("\n")
+            for i, (url, filename) in enumerate(processed_files, 1):
+                f.write(f"{i}. **{filename}** - {url}\n")
         
         print(f"   📑 Índice criado: index.md")
 
