@@ -16,7 +16,7 @@ from main import SimpleWebScraper
 from langchain_core.output_parsers import StrOutputParser
 
 # Configuração da página
-st.set_page_config(page_title="Web Scraper + RAG", page_icon="🔍", layout="wide")
+st.set_page_config(page_title="Athena Code", page_icon="🏛️", layout="wide")
 
 # Carregar variáveis de ambiente
 load_dotenv()
@@ -35,6 +35,7 @@ def get_documentation_dirs():
     
     return doc_dirs
 
+@st.cache_data
 def load_documents(docs_dir):
     """Carrega documentos .md do diretório especificado"""
 
@@ -52,7 +53,8 @@ def load_documents(docs_dir):
         st.error(f"Erro ao carregar documentos: {e}")
         return []
 
-def create_rag_chain(docs):
+@st.cache_resource
+def create_rag_chain(_docs):
     """Cria a cadeia RAG com os documentos carregados"""
     try:
         gemini_api = os.getenv('GEMINI_API')
@@ -65,26 +67,51 @@ def create_rag_chain(docs):
             google_api_key=gemini_api
         )
         
-        vectorstore = FAISS.from_documents(docs, embeddings)
+        vectorstore = FAISS.from_documents(_docs, embeddings)
         
         llm = GoogleGenerativeAI(
             model='gemini-2.0-flash',
             google_api_key=gemini_api,
-            temperature=0.5
+            temperature=0.3
         )
         
         retriever = vectorstore.as_retriever()
         
         prompt = PromptTemplate.from_template(
-            """Você é um assistente de programação especializado.
-            
-Contexto da documentação:
-{context}
+            """Você é um assistente de programação especializado e experiente, com conhecimento aprofundado em múltiplas linguagens e tecnologias.
 
-Pergunta: {question}
+                ## Contexto da Documentação
+                {context}
 
-Responda de forma clara e objetiva, com exemplos práticos quando possível."""
-        )
+                ## Pergunta do Usuário
+                {question}
+
+                ## Instruções para Resposta
+
+                **Estruture sua resposta seguindo este formato:**
+
+                1. **Resposta Direta**: Comece com uma explicação clara e concisa que responda diretamente à pergunta
+                2. **Exemplo Prático**: Forneça código funcional e bem comentado
+                3. **Explicação Detalhada**: Detalhe como o código funciona, linha por linha se necessário
+                4. **Melhores Práticas**: Inclua dicas de otimização, segurança ou convenções relevantes
+                5. **Alternativas** (se aplicável): Mencione outras abordagens possíveis
+                6. **Recursos Adicionais** (se necessário): Sugira documentação ou conceitos relacionados para estudo
+
+                **Diretrizes Importantes:**
+                - Use linguagem técnica precisa, mas acessível
+                - Priorize soluções práticas e testadas
+                - Indique possíveis armadilhas ou erros comuns
+                - Adapte exemplos ao contexto específico da pergunta
+                - Se o contexto não fornecer informações suficientes, indique claramente e ofereça a melhor solução baseada em práticas padrão
+                - Sempre valide se sua resposta está alinhada com as informações do contexto fornecido
+                - Priorize responder o usuário em paragrafos, não em bullet points
+                - limite-se a documentação carregada, caso não haja informação suficiente, informe ao usuário que não há informações disponíveis.
+
+                **Formato de Código:**
+                - Use blocos de código com syntax highlighting apropriado
+                - Inclua comentários explicativos em português
+                - Mantenha código limpo e bem organizado
+                - Teste mentalmente o código antes de apresentar""")
         
         rag_chain = (
             {"context": retriever | (lambda docs: "\n\n".join(doc.page_content for doc in docs)), 
@@ -100,7 +127,7 @@ Responda de forma clara e objetiva, com exemplos práticos quando possível."""
         return None
 
 def main():
-    st.title("🔍 Web Scraper + RAG Assistant")
+    st.title("🏛️ Athena Code, AI RAG Assistant")
     
     # Sidebar para configurações
     with st.sidebar:
@@ -196,17 +223,20 @@ def main():
             st.session_state.messages.append({"role": "user", "content": prompt})
             with st.chat_message("user"):
                 st.write(prompt)
-            
+
             # Gerar resposta
             with st.chat_message("assistant"):
-                with st.spinner("Pensando..."):
-                    try:
-                        response = st.session_state.rag_chain.invoke(prompt)
-                        st.write(response)
-                        st.session_state.messages.append({"role": "assistant", "content": response})
-                    except Exception as e:
-                        error_msg = f"Erro: {e}"
-                        st.error(error_msg)
+                full_response = ""
+                message_placeholder = st.empty()
+                try:
+                    for chunk in st.session_state.rag_chain.stream(prompt):
+                        full_response += chunk
+                        message_placeholder.write(full_response + "▌")
+                    message_placeholder.write(full_response)
+                    st.session_state.messages.append({"role": "assistant", "content": full_response})
+                except Exception as e:
+                    error_msg = f"Erro: {e}"
+                    st.error(error_msg)
     
     # Status na sidebar
     with st.sidebar:
