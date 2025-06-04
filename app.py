@@ -75,43 +75,42 @@ def create_rag_chain(_docs):
             temperature=0.3
         )
         
-        retriever = vectorstore.as_retriever()
+        retriever = vectorstore.as_retriever(
+            search_type="similarity",
+            search_kwargs={"k": 5, "filter": {"source": {"$exists": True}}}
+        )
         
         prompt = PromptTemplate.from_template(
-            """Você é um assistente de programação especializado e experiente, com conhecimento aprofundado em múltiplas linguagens e tecnologias.
+                    """Você é um assistente de programação especializado que DEVE responder EXCLUSIVAMENTE baseado na documentação fornecida.
 
-                ## Contexto da Documentação
-                {context}
+                        ## Documentação Carregada
+                        {context}
 
-                ## Pergunta do Usuário
-                {question}
+                        ## Pergunta do Usuário
+                        {question}
 
-                ## Instruções para Resposta
+                        ## REGRAS IMPORTANTES - LEIA COM ATENÇÃO:
+                        
+                        1. **RESPONDA APENAS COM BASE NA DOCUMENTAÇÃO ACIMA**
+                        2. **Se a informação não estiver na documentação, diga claramente: "Esta informação não está disponível na documentação carregada."**
+                        3. **NÃO use conhecimento geral fora da documentação fornecida**
+                        4. **Sempre referencie seções específicas da documentação quando possível**
 
-                **Estruture sua resposta seguindo este formato:**
+                        ## Formato da Resposta:
 
-                1. **Resposta Direta**: Comece com uma explicação clara e concisa que responda diretamente à pergunta
-                2. **Exemplo Prático**: Forneça código funcional e bem comentado
-                3. **Explicação Detalhada**: Detalhe como o código funciona, linha por linha se necessário
-                4. **Melhores Práticas**: Inclua dicas de otimização, segurança ou convenções relevantes
-                5. **Alternativas** (se aplicável): Mencione outras abordagens possíveis
-                6. **Recursos Adicionais** (se necessário): Sugira documentação ou conceitos relacionados para estudo
+                        **Baseado na documentação carregada:**
 
-                **Diretrizes Importantes:**
-                - Use linguagem técnica precisa, mas acessível
-                - Priorize soluções práticas e testadas
-                - Indique possíveis armadilhas ou erros comuns
-                - Adapte exemplos ao contexto específico da pergunta
-                - Se o contexto não fornecer informações suficientes, indique claramente e ofereça a melhor solução baseada em práticas padrão
-                - Sempre valide se sua resposta está alinhada com as informações do contexto fornecido
-                - Priorize responder o usuário em paragrafos, não em bullet points
-                - limite-se a documentação carregada, caso não haja informação suficiente, informe ao usuário que não há informações disponíveis.
+                        1. **Resposta Direta**: Responda usando APENAS as informações da documentação
+                        2. **Exemplo da Documentação**: Use exemplos que estão na documentação
+                        3. **Explicação**: Explique baseado no que está documentado
+                        4. **Referência**: Mencione qual parte da documentação você usou
 
-                **Formato de Código:**
-                - Use blocos de código com syntax highlighting apropriado
-                - Inclua comentários explicativos em português
-                - Mantenha código limpo e bem organizado
-                - Teste mentalmente o código antes de apresentar""")
+                        **Se não houver informação suficiente na documentação:**
+                        - Informe claramente que a informação não está disponível
+                        - Sugira que o usuário verifique se carregou a documentação correta
+                        - NÃO invente ou use conhecimento externo
+
+                        **Lembre-se**: Você só conhece o que está na documentação fornecida acima. Tudo fora disso você deve dizer que não sabe.""")
         
         rag_chain = (
             {"context": retriever | (lambda docs: "\n\n".join(doc.page_content for doc in docs)), 
@@ -197,8 +196,10 @@ def main():
                         rag_chain = create_rag_chain(docs)
                         if rag_chain:
                             st.session_state.rag_chain = rag_chain
+                            st.session_state.current_doc_dir = selected_dir
                             st.session_state.docs_loaded = True
-                            st.success(f"✅ {len(docs)} documentos carregados!")
+                            doc_name = os.path.basename(selected_dir)
+                            st.success(f"✅ {len(docs)} documentos de '{doc_name}' carregados!")
                 else:
                     st.error(f"Diretório não encontrado: {selected_dir}")
     
