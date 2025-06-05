@@ -35,7 +35,6 @@ def get_documentation_dirs():
     
     return doc_dirs
 
-@st.cache_data
 def load_documents(docs_dir):
     """Carrega documentos .md do diretório especificado"""
 
@@ -53,7 +52,6 @@ def load_documents(docs_dir):
         st.error(f"Erro ao carregar documentos: {e}")
         return []
 
-@st.cache_resource
 def create_rag_chain(_docs):
     """Cria a cadeia RAG com os documentos carregados"""
     try:
@@ -77,7 +75,7 @@ def create_rag_chain(_docs):
         
         retriever = vectorstore.as_retriever(
             search_type="similarity",
-            search_kwargs={"k": 5, "filter": {"source": {"$exists": True}}}
+            search_kwargs={"k": 5}
         )
         
         prompt = PromptTemplate.from_template(
