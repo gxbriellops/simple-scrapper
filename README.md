@@ -1,79 +1,101 @@
-<<<<<<< HEAD
-# 🚀 Web Scraper Avançado
+# 📄 Web Scraper - Sistema de Documentação Automatizada
 
-Sistema avançado de scraping web com interface gráfica para extração e documentação de sites.
+Sistema avançado de web scraping com interface gráfica para extração e conversão de conteúdo web em documentação estruturada em Markdown.
 
-## ✨ Funcionalidades
+## 📋 Descrição
 
-### 🎯 Principais Recursos
+Este projeto oferece uma solução completa para extração de conteúdo de sites e conversão automática para arquivos Markdown bem formatados. Ideal para criar documentação local de APIs, tutoriais, artigos técnicos e outros recursos web.
 
-- **Scrapy + Selenium**: Combinação poderosa para sites estáticos e dinâmicos
-- **Interface Gráfica**: Fácil de usar com tkinter moderno
-- **Multi-método de Extração**:
-  - Selenium para conteúdo JavaScript/dinâmico
-  - Scrapy para crawling eficiente
-  - Docling para conversão em Markdown
-  - BeautifulSoup como fallback
-- **Sistema Inteligente de Cache**: Evita reprocessar URLs já visitadas
-- **Tratamento Robusto de Erros**: Retry automático e fallbacks múltiplos
-- **Controle de Profundidade**: Limite configurável de páginas
-- **Filtros Inteligentes**: Ignora automaticamente arquivos binários e páginas irrelevantes
+### Características Principais
 
-### 📊 Recursos Avançados
+- **Interface Gráfica Intuitiva**: Aplicação desktop desenvolvida em Tkinter
+- **Conversão Inteligente**: Utiliza Docling para conversão precisa de HTML para Markdown
+- **Processamento em Lote**: Suporte para múltiplas URLs simultaneamente
+- **Organização Automática**: Geração de índices e estruturação hierárquica de arquivos
+- **Arquitetura SOLID**: Código modular, testável e extensível
+- **Gestão de Dependências**: Sistema de injeção de dependências para fácil manutenção
 
-- ✅ **Requisições Assíncronas**: Até 8 requisições simultâneas
-- ✅ **Deduplicação**: URLs processadas apenas uma vez
-- ✅ **Metadados Persistentes**: Salva progresso entre execuções
-- ✅ **Índice Automático**: Gera INDEX.md com todos os arquivos
-- ✅ **Logs Detalhados**: Acompanhamento em tempo real
-- ✅ **Respeito ao robots.txt**: Crawling ético
-- ✅ **User Agent Moderno**: Evita bloqueios
+## 🏗️ Arquitetura
+
+O projeto foi desenvolvido seguindo os princípios SOLID de design orientado a objetos:
+
+- **Single Responsibility**: Cada classe possui uma única responsabilidade bem definida
+- **Open/Closed**: Extensível através de interfaces sem modificação de código existente
+- **Liskov Substitution**: Implementações podem ser substituídas sem quebrar funcionalidades
+- **Interface Segregation**: Interfaces específicas e enxutas
+- **Dependency Inversion**: Dependência de abstrações, não de implementações concretas
+
+Para mais detalhes sobre a arquitetura, consulte [SOLID_PRINCIPLES.md](SOLID_PRINCIPLES.md).
 
 ## 📦 Instalação
 
-### 1. Instalar Dependências
+### Pré-requisitos
+
+- Python 3.8 ou superior
+- pip (gerenciador de pacotes Python)
+
+### Dependências
+
+Instale as dependências necessárias utilizando:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 2. Instalar ChromeDriver
+O arquivo `requirements.txt` contém:
+- **beautifulsoup4**: Parser HTML/XML
+- **docling**: Conversor de documentos para Markdown
+- **requests**: Biblioteca HTTP
 
-O Selenium requer o ChromeDriver. Baixe em: https://chromedriver.chromium.org/
+## 🚀 Execução
 
-Ou use webdriver-manager (já incluído em requirements.txt):
-```python
-from webdriver_manager.chrome import ChromeDriverManager
-```
+### Modo Interface Gráfica (Recomendado)
 
-## 🎮 Uso
-
-### Interface Gráfica
+Execute a aplicação através da interface gráfica:
 
 ```bash
 python interface.py
 ```
 
-**Campos da Interface:**
+**Nota sobre Execução**: O projeto foi desenvolvido para ser executado via script Python `.py` diretamente, não como executável compilado. Isso permite maior flexibilidade e evita dependências de drivers externos (como webdriver para Selenium). Para facilitar o acesso, é recomendado criar atalhos que abram o terminal no diretório do projeto.
 
-1. **URL do Site**: URL completa do site a ser raspado
-2. **Nome da Pasta**: Nome da pasta dentro de `DOCUMENTAÇÃO/`
-3. **Limite de Páginas**: Máximo de páginas a processar (1-1000)
-4. **Usar Selenium**: ☑️ para sites com JavaScript
+### Configuração via Interface
+
+1. **URLs**: Insira uma ou mais URLs dos sites a documentar
+2. **Nome da Pasta**: Defina o nome da pasta de destino em `DOCUMENTAÇÃO/`
+3. **Limite de Páginas**: Configure o número máximo de páginas a processar (1-1000)
+4. **Selenium**: Opção desabilitada por padrão (requer configuração adicional)
 
 ### Modo Programático
+
+Para integração em scripts ou automações:
 
 ```python
 from scrapper import SimpleWebScraper
 
-# Criar scraper
+# Configuração básica
 scraper = SimpleWebScraper(
-    url="https://exemplo.com",
-    use_selenium=True,  # Usar Selenium para conteúdo dinâmico
-    max_pages=100       # Limitar a 100 páginas
+    urls="https://exemplo.com.br",
+    max_pages=50
 )
 
-# Executar
+# Executar scraping
+scraper.run()
+```
+
+### Modo Avançado com Injeção de Dependências
+
+```python
+from scrapper import SimpleWebScraper, DoclingConverter
+
+# Usar conversor customizado
+custom_converter = DoclingConverter()
+scraper = SimpleWebScraper(
+    urls=["https://site1.com", "https://site2.com"],
+    converter=custom_converter,
+    max_pages=100
+)
+
 scraper.run()
 ```
 
@@ -82,156 +104,213 @@ scraper.run()
 ```
 DOCUMENTAÇÃO/
 └── nome_da_pasta/
-    ├── INDEX.md              # Índice geral
-    ├── .metadata.json        # Metadados (cache)
-    ├── pagina_1.md
-    ├── pagina_2.md
+    ├── index.md                    # Índice geral com todas as páginas
+    ├── pagina_inicial.md           # Conteúdo convertido
+    ├── documentacao_api.md
+    ├── tutorial_01.md
     └── ...
 ```
 
-### Formato dos Arquivos
+### Formato dos Arquivos Gerados
 
-Cada arquivo `.md` contém:
+Cada arquivo Markdown contém:
 
 ```markdown
 # Título da Página
 
-**Fonte:** https://exemplo.com/pagina
-**Data:** 2025-10-05 14:30:00
+**Fonte:** https://exemplo.com.br/pagina
+**Data:** 2025-10-06 14:30:00
 
 ================================================================================
 
-[Conteúdo extraído em Markdown]
+[Conteúdo extraído e convertido para Markdown]
 ```
 
-## ⚙️ Configurações
+### Arquivo de Índice
 
-### scrapper.py (linhas 28-42)
+O `index.md` gerado automaticamente contém:
 
-```python
-custom_settings = {
-    'ROBOTSTXT_OBEY': True,           # Respeitar robots.txt
-    'CONCURRENT_REQUESTS': 8,         # Requisições simultâneas
-    'DOWNLOAD_DELAY': 1,              # Delay entre requisições (seg)
-    'RETRY_TIMES': 5,                 # Tentativas em caso de erro
-    'DEPTH_LIMIT': 5,                 # Profundidade máxima
-    'DOWNLOAD_TIMEOUT': 30,           # Timeout de download (seg)
-}
-```
-
-### Filtros de URL (linhas 77-87)
-
-URLs ignoradas automaticamente:
-- `/tag/`, `/category/`, `/search`
-- `/login`, `/register`, `/cart`
-- Paginação (`?page=`)
-- Âncoras (`#`)
-
-### Extensões Ignoradas (linhas 70-76)
-
-- Imagens: png, jpg, jpeg, gif, svg, ico
-- Documentos: pdf, zip, rar, tar, gz
-- Executáveis: exe, dmg, pkg, deb, rpm
-- Mídia: mp4, avi, mov, mp3, wav
-- Assets: css, js, woff, ttf
+- Data e hora da extração
+- Lista de URLs de origem
+- Total de páginas processadas
+- Links para todos os arquivos gerados
 
 ## 🔧 Personalização
 
-### Adicionar Filtros Customizados
+### Criar Conversor Customizado
 
 ```python
-# Em scrapper.py, linha 77
-deny=[
-    r'/tag/',
-    r'/category/',
-    r'/seu-filtro-aqui/',  # Adicione aqui
-]
+from scrapper import IContentConverter
+
+class MeuConverter(IContentConverter):
+    def convert(self, url: str) -> str:
+        # Implementação personalizada
+        return conteudo_markdown
+
+# Usar conversor customizado
+scraper = SimpleWebScraper(
+    urls="https://exemplo.com",
+    converter=MeuConverter()
+)
 ```
 
-### Modificar Selenium Options
+### Modificar Diretório de Saída
 
 ```python
-# Em scrapper.py, linha 105-121
-chrome_options.add_argument('--seu-argumento')
+scraper = SimpleWebScraper(urls="https://exemplo.com")
+scraper.output_dir = "DOCS/minha_pasta"
+scraper.run()
 ```
 
-### Ajustar Extração de Conteúdo
+## 📂 Estrutura do Projeto
 
-```python
-# Em scrapper.py, linha 229-230
-# Modificar quais elementos remover
-for element in soup(['script', 'style', 'nav', 'footer']):
-    element.decompose()
+```
+simple-scrapper/
+├── interface.py              # Interface gráfica (Tkinter)
+├── scrapper.py              # Lógica principal de scraping
+├── requirements.txt         # Dependências do projeto
+├── LICENSE                  # Licença MIT
+├── README.md               # Este arquivo
+├── SOLID_PRINCIPLES.md     # Documentação da arquitetura
+└── DOCUMENTAÇÃO/           # Pasta de saída (gerada automaticamente)
 ```
 
-## 🐛 Solução de Problemas
+## 🎯 Componentes Principais
 
-### Selenium não funciona
+### `interface.py`
 
-1. Verifique se o ChromeDriver está instalado
-2. Verifique a versão do Chrome vs ChromeDriver
-3. O scraper continuará funcionando sem Selenium (apenas Scrapy)
+- **InputValidator**: Validação de entradas do usuário
+- **FolderManager**: Gerenciamento de pastas e diretórios
+- **URLFieldManager**: Controle dinâmico de campos de URL
+- **WebScraperGUI**: Interface gráfica principal
 
-### Timeout/Erro de Conexão
+### `scrapper.py`
 
-- Aumente `DOWNLOAD_TIMEOUT` em `custom_settings`
-- Reduza `CONCURRENT_REQUESTS`
-- Aumente `DOWNLOAD_DELAY`
+- **IContentConverter**: Interface para conversores de conteúdo
+- **DoclingConverter**: Implementação usando biblioteca Docling
+- **FileManager**: Gerenciamento de arquivos e nomenclatura
+- **IndexGenerator**: Geração de índices
+- **URLProcessor**: Processamento individual de URLs
+- **SimpleWebScraper**: Orquestrador principal
 
-### Páginas vazias
+## ⚙️ Configurações
 
-- Ative o Selenium para sites com JavaScript
-- Verifique se o site não bloqueia bots
-- Ajuste o User Agent
+### Limites e Controles
 
-### Muitas páginas ignoradas
+- **max_pages**: Controla quantas páginas serão processadas (padrão: 100)
+- **output_dir**: Define o diretório de saída (padrão: nome baseado no domínio)
+- **use_selenium**: Flag para habilitar Selenium (requer configuração adicional)
 
-- Revise os filtros em `deny=[]`
-- Verifique `DEPTH_LIMIT`
-- Aumente `max_pages`
+### Tratamento de Erros
 
-## 📊 Estatísticas de Performance
+O sistema possui tratamento robusto de erros:
+- Fallback automático em caso de falha de conversão
+- Logs detalhados de todas as operações
+- Continuação do processamento mesmo com falhas individuais
 
-- **Velocidade**: ~8 páginas/segundo (sem Selenium)
-- **Velocidade c/ Selenium**: ~1-2 páginas/segundo
-- **Uso de Memória**: ~100-200 MB
-- **CPU**: Moderado (multi-thread)
+## 🐛 Troubleshooting
 
-## 📝 Logs e Debugging
+### Erro: "Nenhum conteúdo foi extraído"
 
-### Ativar Logs Detalhados
+**Causa**: O site pode estar bloqueando requisições ou usando JavaScript pesado.
 
-```python
-# Em scrapper.py, linha 35
-'LOG_LEVEL': 'INFO',  # ou 'DEBUG'
+**Solução**: 
+- Verifique se a URL está acessível no navegador
+- Alguns sites requerem Selenium (requer configuração adicional de webdriver)
+
+### Erro: "Módulo não encontrado"
+
+**Causa**: Dependências não instaladas corretamente.
+
+**Solução**:
+```bash
+pip install -r requirements.txt
 ```
 
-### Arquivo de Metadados
+### Interface não abre
 
-O arquivo `.metadata.json` contém:
-- URLs processadas (cache)
-- Data da última execução
-- URLs com erro
-- Total de páginas
+**Causa**: Tkinter não está instalado ou configurado.
+
+**Solução** (Ubuntu/Debian):
+```bash
+sudo apt-get install python3-tk
+```
+
+### Muitas dependências no ambiente
+
+**Causa**: Ambiente Python com muitos pacotes instalados.
+
+**Solução**: Use ambiente virtual ou limpe dependências:
+```bash
+# Criar ambiente virtual
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+venv\Scripts\activate     # Windows
+
+# Instalar apenas dependências necessárias
+pip install -r requirements.txt
+```
+
+## 📊 Performance
+
+- **Velocidade**: ~2-5 páginas por segundo (depende da conexão e site)
+- **Uso de Memória**: ~50-150 MB durante operação
+- **Armazenamento**: Variável conforme tamanho das páginas
+
+## 🔐 Considerações de Uso
+
+### Uso Ético
+
+- Respeite os termos de serviço dos sites
+- Verifique o arquivo `robots.txt` do site
+- Utilize delays apropriados entre requisições
+- Não sobrecarregue servidores com requisições excessivas
+
+### Limitações
+
+- Não processa conteúdo protegido por autenticação
+- Sites com JavaScript pesado podem requerer Selenium (configuração adicional)
+- Alguns sites implementam proteção contra scraping
 
 ## 🤝 Contribuindo
 
-Sugestões e melhorias são bem-vindas!
+Contribuições são bem-vindas! Para contribuir:
 
-## ⚠️ Avisos Legais
+1. Faça um fork do projeto
+2. Crie uma branch para sua feature (`git checkout -b feature/MinhaFeature`)
+3. Commit suas mudanças (`git commit -m 'Adiciona MinhaFeature'`)
+4. Push para a branch (`git push origin feature/MinhaFeature`)
+5. Abra um Pull Request
 
-- Respeite os termos de serviço dos sites
-- Respeite robots.txt (ativado por padrão)
-- Use delays apropriados entre requisições
-- Não sobrecarregue servidores
+### Diretrizes
+
+- Siga os princípios SOLID já implementados
+- Adicione testes para novas funcionalidades
+- Mantenha a documentação atualizada
+- Utilize type hints em Python
 
 ## 📄 Licença
 
-MIT License - use livremente!
+Este projeto está licenciado sob a Licença MIT - veja o arquivo [LICENSE](LICENSE) para detalhes.
+
+```
+MIT License - Copyright (c) 2025 Gabriel Lopes
+```
+
+## 👤 Autor
+
+**Gabriel Lopes**
+
+## 🙏 Agradecimentos
+
+- **Docling**: Excelente biblioteca para conversão de documentos
+- **BeautifulSoup**: Parser HTML robusto e confiável
+- **Comunidade Python**: Pelo ecossistema rico de bibliotecas
+
+## 📮 Suporte
+
+Para reportar bugs ou solicitar features, abra uma issue no repositório do projeto.
 
 ---
 
-**Desenvolvido com ❤️ usando Scrapy, Selenium, Docling e Tkinter**
-=======
-# simple-scrapper
->>>>>>> ad2508e8033bae63c0ad12a6ed97d154f25231d9
+**Desenvolvido com Python 🐍 | Interface com Tkinter | Conversão com Docling**
