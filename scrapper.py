@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-"""Web Scraper Simplificado - Extrai conteúdo de websites e converte para Markdown"""
-
 import os
 import re
 from abc import ABC, abstractmethod
