@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # 🚀 Web Scraper Avançado
 
 Sistema avançado de scraping web com interface gráfica para extração e documentação de sites.
@@ -231,3 +232,6 @@ MIT License - use livremente!
 ---
 
 **Desenvolvido com ❤️ usando Scrapy, Selenium, Docling e Tkinter**
+=======
+# simple-scrapper
+>>>>>>> ad2508e8033bae63c0ad12a6ed97d154f25231d9
