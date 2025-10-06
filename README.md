@@ -1,224 +1,233 @@
-# 🏛️ Athena Code - AI RAG Assistant
+# 🚀 Web Scraper Avançado
 
-> **Assistente de IA especializado em documentação técnica com capacidades de web scraping e consulta inteligente**
+Sistema avançado de scraping web com interface gráfica para extração e documentação de sites.
 
-## 📖 Sobre o Projeto
+## ✨ Funcionalidades
 
-O **Athena Code** é uma aplicação que combina web scraping inteligente com um sistema de RAG (Retrieval-Augmented Generation) para criar um assistente de IA especializado em documentação técnica. O projeto permite extrair conteúdo de websites de documentação, converter para formato Markdown e depois consultá-los através de uma interface de chat alimentada pela IA do Google Gemini.
+### 🎯 Principais Recursos
 
-### 🎯 Funcionalidades Principais
+- **Scrapy + Selenium**: Combinação poderosa para sites estáticos e dinâmicos
+- **Interface Gráfica**: Fácil de usar com tkinter moderno
+- **Multi-método de Extração**:
+  - Selenium para conteúdo JavaScript/dinâmico
+  - Scrapy para crawling eficiente
+  - Docling para conversão em Markdown
+  - BeautifulSoup como fallback
+- **Sistema Inteligente de Cache**: Evita reprocessar URLs já visitadas
+- **Tratamento Robusto de Erros**: Retry automático e fallbacks múltiplos
+- **Controle de Profundidade**: Limite configurável de páginas
+- **Filtros Inteligentes**: Ignora automaticamente arquivos binários e páginas irrelevantes
 
-**Web Scraping Inteligente:**
-- Extração automática de conteúdo de websites de documentação
-- Conversão para formato Markdown preservando a estrutura
-- Processamento de múltiplas páginas do mesmo domínio
-- Geração automática de índices organizados
+### 📊 Recursos Avançados
 
-**Sistema RAG Avançado:**
-- Carregamento e indexação de documentos Markdown
-- Busca semântica usando embeddings do Google Gemini
-- Respostas baseadas exclusivamente na documentação carregada
-- Interface de chat intuitiva e responsiva
+- ✅ **Requisições Assíncronas**: Até 8 requisições simultâneas
+- ✅ **Deduplicação**: URLs processadas apenas uma vez
+- ✅ **Metadados Persistentes**: Salva progresso entre execuções
+- ✅ **Índice Automático**: Gera INDEX.md com todos os arquivos
+- ✅ **Logs Detalhados**: Acompanhamento em tempo real
+- ✅ **Respeito ao robots.txt**: Crawling ético
+- ✅ **User Agent Moderno**: Evita bloqueios
 
-**Interface Streamlit:**
-- Design limpo e profissional
-- Configuração fácil via sidebar
-- Chat em tempo real com streaming de respostas
-- Gerenciamento de sessões e histórico
+## 📦 Instalação
 
-## 🚀 Inspiração e Motivação
-
-Este projeto foi inspirado em uma das demonstrações que vi no anúncio da **Asimov Academy**, onde percebi o potencial de combinar web scraping com sistemas de IA para criar assistentes especializados. Decidi desenvolver minha própria versão de forma completamente autodidata, explorando tecnologias como Langchain, FAISS e Google Gemini AI para criar uma solução robusta e prática.
-
-## ⚠️ Requisitos Importantes
-
-### Versão do Python
-**IMPORTANTE:** Use Python 3.11.x (recomendado: 3.11.11) ou anterior. **NÃO use Python 3.12+**
-
-O projeto utiliza a biblioteca `docling` que depende do TensorFlow, e há conflitos conhecidos com Python 3.12. Durante o desenvolvimento, utilizei especificamente a versão 3.11.11 sem problemas.
-
-### API do Google Gemini
-Você precisará de uma chave da API do Google Gemini. Obtenha gratuitamente em [Google AI Studio](https://aistudio.google.com/).
-
-## 🛠️ Instalação e Configuração
-
-### Passo 1: Preparação do Ambiente
+### 1. Instalar Dependências
 
 ```bash
-# Clone o repositório
-git clone https://github.com/seu-usuario/athena-code.git
-cd athena-code
-
-# Verifique sua versão do Python (deve ser 3.11.x)
-python --version
-
-# Crie um ambiente virtual
-python -m venv venv
-
-# Ative o ambiente virtual
-# No Windows:
-venv\Scripts\activate
-# No Linux/Mac:
-source venv/bin/activate
-```
-
-### Passo 2: Instalação das Dependências
-
-```bash
-# Instale as dependências
 pip install -r requirements.txt
 ```
 
-**Nota:** A instalação pode demorar alguns minutos devido às dependências do TensorFlow e outras bibliotecas de machine learning.
+### 2. Instalar ChromeDriver
 
-### Passo 3: Configuração da API
+O Selenium requer o ChromeDriver. Baixe em: https://chromedriver.chromium.org/
 
-1. Obtenha sua chave da API do Google Gemini
-2. Crie um arquivo `.env` na raiz do projeto:
-
-```env
-GEMINI_API="sua_chave_api_aqui"
+Ou use webdriver-manager (já incluído em requirements.txt):
+```python
+from webdriver_manager.chrome import ChromeDriverManager
 ```
 
-### Passo 4: Execução
+## 🎮 Uso
+
+### Interface Gráfica
 
 ```bash
-# Execute a aplicação
-streamlit run app.py
+python interface.py
 ```
 
-A aplicação abrirá automaticamente em `http://localhost:8501`
+**Campos da Interface:**
 
-## 📚 Como Usar
+1. **URL do Site**: URL completa do site a ser raspado
+2. **Nome da Pasta**: Nome da pasta dentro de `DOCUMENTAÇÃO/`
+3. **Limite de Páginas**: Máximo de páginas a processar (1-1000)
+4. **Usar Selenium**: ☑️ para sites com JavaScript
 
-### 1. Web Scraping de Documentação
-
-Na sidebar da aplicação:
-
-1. **Insira a URL** da documentação que deseja extrair (ex: `https://docs.streamlit.io`)
-2. **Clique em "Extrair Conteúdo"** e aguarde o processamento
-3. O sistema irá:
-   - Descobrir todos os links relacionados no mesmo domínio
-   - Extrair o conteúdo de cada página
-   - Converter tudo para formato Markdown
-   - Organizar os arquivos em um diretório específico
-
-### 2. Carregamento de Documentos
-
-1. **Selecione o diretório** com os documentos Markdown na sidebar
-2. **Clique em "Carregar Documentos"** para indexar o conteúdo
-3. O sistema criará embeddings e preparará o sistema RAG
-
-### 3. Consulta Inteligente
-
-1. **Use o chat** na área principal para fazer perguntas sobre a documentação
-2. **Faça perguntas específicas** como:
-   - "Como criar um componente de slider no Streamlit?"
-   - "Quais são os parâmetros da função st.plotly_chart?"
-   - "Como implementar autenticação de usuários?"
-
-## 🏗️ Arquitetura Técnica
-
-### Componentes Principais
-
-**SimpleWebScraper** (`main.py`):
-- Utiliza `docling` para conversão de conteúdo web para Markdown
-- Implementa descoberta automática de links relacionados
-- Gera estrutura organizada de arquivos com índices
-
-**Sistema RAG** (`app.py`):
-- **Embeddings:** Google Gemini `models/embedding-001`
-- **Vector Store:** FAISS para busca semântica eficiente
-- **LLM:** Google Gemini `gemini-2.0-flash` para geração de respostas
-- **Retrieval:** Top-5 documentos mais relevantes por consulta
-
-**Interface Streamlit:**
-- Design responsivo com sidebar para configurações
-- Chat streaming para respostas em tempo real
-- Gerenciamento de estado para sessões persistentes
-
-### Fluxo de Dados
-
-```
-URL → Web Scraper → Markdown Files → FAISS Indexing → RAG System → Chat Interface
-```
-
-## 🎨 Personalização
-
-### Modificando o Prompt do Sistema
-
-No arquivo `app.py`, você pode personalizar o comportamento do assistente modificando o `PromptTemplate`:
+### Modo Programático
 
 ```python
-prompt = PromptTemplate.from_template(
-    """Seu prompt personalizado aqui...
-    
-    {context}
-    {question}
-    """
+from scrapper import SimpleWebScraper
+
+# Criar scraper
+scraper = SimpleWebScraper(
+    url="https://exemplo.com",
+    use_selenium=True,  # Usar Selenium para conteúdo dinâmico
+    max_pages=100       # Limitar a 100 páginas
 )
+
+# Executar
+scraper.run()
 ```
 
-### Ajustando Parâmetros de Busca
+## 📁 Estrutura de Saída
 
-Modifique os parâmetros do retriever para alterar a qualidade das respostas:
+```
+DOCUMENTAÇÃO/
+└── nome_da_pasta/
+    ├── INDEX.md              # Índice geral
+    ├── .metadata.json        # Metadados (cache)
+    ├── pagina_1.md
+    ├── pagina_2.md
+    └── ...
+```
+
+### Formato dos Arquivos
+
+Cada arquivo `.md` contém:
+
+```markdown
+# Título da Página
+
+**Fonte:** https://exemplo.com/pagina
+**Data:** 2025-10-05 14:30:00
+
+================================================================================
+
+[Conteúdo extraído em Markdown]
+```
+
+## ⚙️ Configurações
+
+### scrapper.py (linhas 28-42)
 
 ```python
-retriever = vectorstore.as_retriever(
-    search_type="similarity",
-    search_kwargs={"k": 5}  # Número de documentos recuperados
-)
+custom_settings = {
+    'ROBOTSTXT_OBEY': True,           # Respeitar robots.txt
+    'CONCURRENT_REQUESTS': 8,         # Requisições simultâneas
+    'DOWNLOAD_DELAY': 1,              # Delay entre requisições (seg)
+    'RETRY_TIMES': 5,                 # Tentativas em caso de erro
+    'DEPTH_LIMIT': 5,                 # Profundidade máxima
+    'DOWNLOAD_TIMEOUT': 30,           # Timeout de download (seg)
+}
 ```
 
-## 🔧 Solução de Problemas
+### Filtros de URL (linhas 77-87)
 
-### Erro de Compatibilidade do TensorFlow
+URLs ignoradas automaticamente:
+- `/tag/`, `/category/`, `/search`
+- `/login`, `/register`, `/cart`
+- Paginação (`?page=`)
+- Âncoras (`#`)
+
+### Extensões Ignoradas (linhas 70-76)
+
+- Imagens: png, jpg, jpeg, gif, svg, ico
+- Documentos: pdf, zip, rar, tar, gz
+- Executáveis: exe, dmg, pkg, deb, rpm
+- Mídia: mp4, avi, mov, mp3, wav
+- Assets: css, js, woff, ttf
+
+## 🔧 Personalização
+
+### Adicionar Filtros Customizados
+
+```python
+# Em scrapper.py, linha 77
+deny=[
+    r'/tag/',
+    r'/category/',
+    r'/seu-filtro-aqui/',  # Adicione aqui
+]
 ```
-Solução: Use Python 3.11.x em vez de 3.12+
+
+### Modificar Selenium Options
+
+```python
+# Em scrapper.py, linha 105-121
+chrome_options.add_argument('--seu-argumento')
 ```
 
-### Erro de API do Gemini
-```
-Solução: Verifique se sua chave API está correta no arquivo .env
-```
+### Ajustar Extração de Conteúdo
 
-### Problemas de Memória
-```
-Solução: Reduza o número de documentos processados ou aumente a RAM disponível
-```
-
-### Erro no Web Scraping
-```
-Solução: Verifique se a URL é acessível e se o site permite scraping
+```python
+# Em scrapper.py, linha 229-230
+# Modificar quais elementos remover
+for element in soup(['script', 'style', 'nav', 'footer']):
+    element.decompose()
 ```
 
-## 📝 Licença
+## 🐛 Solução de Problemas
 
-Este projeto está licenciado sob a Licença MIT - veja o arquivo [LICENSE](LICENSE) para detalhes.
+### Selenium não funciona
 
-## 🤝 Contribuições
+1. Verifique se o ChromeDriver está instalado
+2. Verifique a versão do Chrome vs ChromeDriver
+3. O scraper continuará funcionando sem Selenium (apenas Scrapy)
 
-Contribuições são bem-vindas! Sinta-se à vontade para:
+### Timeout/Erro de Conexão
 
-- Reportar bugs através das Issues
-- Sugerir novas funcionalidades
-- Submeter Pull Requests com melhorias
-- Compartilhar exemplos de uso interessantes
+- Aumente `DOWNLOAD_TIMEOUT` em `custom_settings`
+- Reduza `CONCURRENT_REQUESTS`
+- Aumente `DOWNLOAD_DELAY`
 
-## 🎓 Aprendizado e Desenvolvimento
+### Páginas vazias
 
-Este projeto representa minha jornada autodidata no desenvolvimento de sistemas de IA aplicada. Foi uma oportunidade incrível para explorar:
+- Ative o Selenium para sites com JavaScript
+- Verifique se o site não bloqueia bots
+- Ajuste o User Agent
 
-- **RAG Systems:** Compreensão profunda de como combinar recuperação de informações com geração de linguagem
-- **Web Scraping Inteligente:** Uso de bibliotecas modernas como `docling` para extração robusta de conteúdo
-- **Vector Databases:** Implementação prática com FAISS para busca semântica
-- **LangChain Framework:** Orquestração de componentes de IA de forma elegante
-- **Interface de Usuário:** Criação de experiências intuitivas com Streamlit
+### Muitas páginas ignoradas
 
-A inspiração inicial veio da Asimov Academy, mas o desenvolvimento foi completamente independente, representando um exercício valioso de aprendizado prático em IA e desenvolvimento de software.
+- Revise os filtros em `deny=[]`
+- Verifique `DEPTH_LIMIT`
+- Aumente `max_pages`
+
+## 📊 Estatísticas de Performance
+
+- **Velocidade**: ~8 páginas/segundo (sem Selenium)
+- **Velocidade c/ Selenium**: ~1-2 páginas/segundo
+- **Uso de Memória**: ~100-200 MB
+- **CPU**: Moderado (multi-thread)
+
+## 📝 Logs e Debugging
+
+### Ativar Logs Detalhados
+
+```python
+# Em scrapper.py, linha 35
+'LOG_LEVEL': 'INFO',  # ou 'DEBUG'
+```
+
+### Arquivo de Metadados
+
+O arquivo `.metadata.json` contém:
+- URLs processadas (cache)
+- Data da última execução
+- URLs com erro
+- Total de páginas
+
+## 🤝 Contribuindo
+
+Sugestões e melhorias são bem-vindas!
+
+## ⚠️ Avisos Legais
+
+- Respeite os termos de serviço dos sites
+- Respeite robots.txt (ativado por padrão)
+- Use delays apropriados entre requisições
+- Não sobrecarregue servidores
+
+## 📄 Licença
+
+MIT License - use livremente!
 
 ---
 
-**Desenvolvido com ❤️ por Gabriel Lopes**
-
-*Se este projeto foi útil para você, considere deixar uma ⭐ no repositório!*
+**Desenvolvido com ❤️ usando Scrapy, Selenium, Docling e Tkinter**
