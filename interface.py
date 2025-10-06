@@ -224,14 +224,14 @@ class WebScraperGUI:
         self.current_row += 1
 
         # Limite de páginas
-        # ttk.Label(main_frame, text="Limite de Páginas:", font=('Arial', 10)).grid(row=self.current_row, column=0, sticky=tk.W, pady=5)
-        # self.max_pages_var = tk.StringVar(value="100")
-        # max_pages_frame = ttk.Frame(main_frame)
-        # max_pages_frame.grid(row=self.current_row, column=1, sticky=(tk.W, tk.E), pady=5, padx=(10, 0))
-        # self.max_pages_spinbox = ttk.Spinbox(max_pages_frame, from_=1, to=1000, textvariable=self.max_pages_var, width=10, font=('Arial', 10))
-        # self.max_pages_spinbox.pack(side=tk.LEFT)
-        # ttk.Label(max_pages_frame, text=" páginas (máximo a processar)", font=('Arial', 9), foreground='gray').pack(side=tk.LEFT, padx=(5, 0))
-        # self.current_row += 1
+        ttk.Label(main_frame, text="Limite de Páginas:", font=('Arial', 10)).grid(row=self.current_row, column=0, sticky=tk.W, pady=5)
+        self.max_pages_var = tk.StringVar(value="100")
+        max_pages_frame = ttk.Frame(main_frame)
+        max_pages_frame.grid(row=self.current_row, column=1, sticky=(tk.W, tk.E), pady=5, padx=(10, 0))
+        self.max_pages_spinbox = ttk.Spinbox(max_pages_frame, from_=1, to=1000, textvariable=self.max_pages_var, width=10, font=('Arial', 10))
+        self.max_pages_spinbox.pack(side=tk.LEFT)
+        ttk.Label(max_pages_frame, text=" páginas (máximo a processar)", font=('Arial', 9), foreground='gray').pack(side=tk.LEFT, padx=(5, 0))
+        self.current_row += 1
 
         # Selenium
         selenium_frame = ttk.Frame(main_frame)
